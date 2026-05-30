@@ -378,7 +378,6 @@
 const LIFF_ID = "2010239215-oyHSlBvS";
 const API_URL = "https://crane-api-w9fj.onrender.com/select-sling";
 const DEFAULTS_URL = "https://crane-api-w9fj.onrender.com/defaults";
-const N8N_WEBHOOK_URL = "https://untaken-launder-purge.ngrok-free.app/webhook/liff-result";
 
 let DEFAULTS = {};
 
@@ -541,22 +540,25 @@ async function submitForm() {
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
 
-    const userId = liff.isInClient() ? liff.getContext()?.userId : null;
-    await fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true"
-      },
-      body: JSON.stringify({
-        userId: userId,
-        source: "liff_sling",
-        sling_input: body,
-        api_response: data
-      })
-    });
+    // สร้างข้อความ LIFF format ส่งเข้า LINE chat
+    const parts = ["LIFF_SLING", "intent=sling_new_job"];
+    if (body.load_weight) parts.push(`load_weight=${body.load_weight}`);
+    if (body.sling_leg_count) parts.push(`sling_leg_count=${body.sling_leg_count}`);
+    if (body.hitch_type) parts.push(`hitch_type=${body.hitch_type}`);
+    if (body.sling_angle_from_horizontal) parts.push(`sling_angle=${body.sling_angle_from_horizontal}`);
+    if (body.sling_length) parts.push(`sling_length=${body.sling_length}`);
+    if (body.max_lifting_point_distance) parts.push(`point_dist=${body.max_lifting_point_distance}`);
+    if (body.vertical_height_hook_to_lifting_point) parts.push(`hook_height=${body.vertical_height_hook_to_lifting_point}`);
+    if (body.sling_safety_factor_percent) parts.push(`safety_factor=${body.sling_safety_factor_percent}`);
+    if (body.use_rigging_weight && body.rigging_weight) parts.push(`rigging_weight=${body.rigging_weight}`);
+    const liffMessage = parts.join("|");
 
     if (liff.isInClient()) {
+      try {
+        await liff.sendMessages([{ type: "text", text: liffMessage }]);
+      } catch (e) {
+        console.error("sendMessages error:", e);
+      }
       liff.closeWindow();
     } else {
       alert(data.reply || "คำนวณเสร็จแล้วครับ");

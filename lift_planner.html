@@ -354,7 +354,6 @@
 const LIFF_ID = "2010239215-NUKeSbNT";
 const API_URL = "https://crane-api-w9fj.onrender.com/select-crane";
 const DEFAULTS_URL = "https://crane-api-w9fj.onrender.com/defaults";
-const N8N_WEBHOOK_URL = "https://untaken-launder-purge.ngrok-free.app/webhook/liff-result";
 
 let DEFAULTS = {};
 
@@ -511,23 +510,38 @@ async function submitForm() {
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
 
-    // ส่งผลไปที่ n8n webhook เพื่อให้ n8n ส่งข้อความกลับ LINE
-    const userId = liff.isInClient() ? liff.getContext()?.userId : null;
-    await fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true"
-      },
-      body: JSON.stringify({
-        userId: userId,
-        source: "liff_crane",
-        crane_input: body,
-        api_response: data
-      })
-    });
+    // สร้างข้อความ LIFF format ส่งเข้า LINE chat
+    const parts = ["LIFF_CRANE", "intent=crane_new_job"];
+    if (body.load_weight) parts.push(`load_weight=${body.load_weight}`);
+    if (body.radius) parts.push(`radius=${body.radius}`);
+    if (body.lift_height) parts.push(`lift_height=${body.lift_height}`);
+    if (body.object_height) parts.push(`object_height=${body.object_height}`);
+    if (body.load_width_radial) parts.push(`load_width_radial=${body.load_width_radial}`);
+    if (body.rigging_point_height_from_load_top) parts.push(`rigging_point=${body.rigging_point_height_from_load_top}`);
+    if (body.safety_factor_percent) parts.push(`safety_factor=${body.safety_factor_percent}`);
+    if (body.load_clearance) parts.push(`load_clearance=${body.load_clearance}`);
+    if (body.hook_drop_from_sheave) parts.push(`hook_drop=${body.hook_drop_from_sheave}`);
+    if (body.preferred_crane_model && body.preferred_crane_model !== "ALL") parts.push(`crane_model=${body.preferred_crane_model}`);
+    if (body.use_underside_obstacle_check) {
+      parts.push(`underside_dist=${body.underside_obstacle_distance}`);
+      parts.push(`underside_height=${body.underside_obstacle_height}`);
+      if (body.underside_obstacle_width_radial) parts.push(`underside_width=${body.underside_obstacle_width_radial}`);
+      if (body.underside_obstacle_clearance) parts.push(`underside_clearance=${body.underside_obstacle_clearance}`);
+    }
+    if (body.use_back_obstacle_check) {
+      parts.push(`back_dist=${body.back_obstacle_distance}`);
+      parts.push(`back_height=${body.back_obstacle_limit_height}`);
+      if (body.back_obstacle_width_radial) parts.push(`back_width=${body.back_obstacle_width_radial}`);
+      if (body.back_obstacle_clearance) parts.push(`back_clearance=${body.back_obstacle_clearance}`);
+    }
+    const liffMessage = parts.join("|");
 
     if (liff.isInClient()) {
+      try {
+        await liff.sendMessages([{ type: "text", text: liffMessage }]);
+      } catch (e) {
+        console.error("sendMessages error:", e);
+      }
       liff.closeWindow();
     } else {
       alert(data.reply || "คำนวณเสร็จแล้วครับ");
