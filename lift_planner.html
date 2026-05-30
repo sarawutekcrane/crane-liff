@@ -127,8 +127,8 @@
   input:checked + .slider { background: var(--accent); }
   input:checked + .slider:before { transform: translateX(22px); }
 
-  .collapsible { display: none; padding-top: 4px; }
-  .collapsible.open { display: block; }
+  .collapsible { display: none; padding-top: 4px; overflow: hidden; }
+  .collapsible.open { display: block !important; }
 
   /* Submit */
   .btn-submit {
@@ -149,28 +149,41 @@
   .btn-submit:active { opacity: 0.85; }
   .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* Loading overlay */
-  .overlay {
+  /* Loading page */
+  #loading-page {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(26,58,107,0.7);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
     z-index: 300;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 16px;
+    gap: 28px;
   }
-  .overlay.show { display: flex; }
+  #loading-page.show { display: flex; }
   .spinner {
-    width: 44px; height: 44px;
-    border: 4px solid rgba(255,255,255,0.3);
+    width: 56px; height: 56px;
+    border: 5px solid rgba(255,255,255,0.25);
     border-top-color: white;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.9s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .overlay p { color: white; font-size: 15px; font-family: 'Sarabun', sans-serif; }
+  .loading-title {
+    color: white;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .loading-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    text-align: center;
+    padding: 0 40px;
+    line-height: 1.6;
+  }
 
   .divider {
     border: none;
@@ -326,10 +339,11 @@
   </div>
 </div>
 
-<!-- Loading Overlay -->
-<div class="overlay" id="overlay">
+<!-- Loading Page -->
+<div id="loading-page">
   <div class="spinner"></div>
-  <p>กำลังคำนวณ...</p>
+  <div class="loading-title">🏗️ กำลังคำนวณ...</div>
+  <div class="loading-sub" id="loading-msg">กำลังเชื่อมต่อกับระบบ<br>กรุณารอสักครู่ครับ</div>
 </div>
 
 <button class="btn-submit" id="btnSubmit" onclick="submitForm()">
@@ -373,7 +387,14 @@ liff.init({ liffId: LIFF_ID }).catch(err => console.error("LIFF init error:", er
 loadDefaults();
 
 function toggle(id, cb) {
-  document.getElementById(id).classList.toggle('open', cb.checked);
+  const el = document.getElementById(id);
+  if (cb.checked) {
+    el.style.display = 'block';
+    el.classList.add('open');
+  } else {
+    el.style.display = 'none';
+    el.classList.remove('open');
+  }
 }
 
 function getNum(id, defaultVal) {
@@ -457,18 +478,27 @@ async function submitForm() {
   // ลบ null ออก
   Object.keys(body).forEach(k => { if (body[k] === null) delete body[k]; });
 
-  document.getElementById('overlay').classList.add('show');
+  document.getElementById('loading-page').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('loading-msg').innerHTML = 'กำลังเชื่อมต่อกับระบบ<br>กรุณารอสักครู่ครับ';
   document.getElementById('btnSubmit').disabled = true;
 
   try {
+    document.getElementById('loading-msg').innerHTML = 'กำลังประมวลผล...<br>อาจใช้เวลา 10-60 วินาทีครับ';
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
 
-    // ส่งผลกลับเข้า LINE chat
     const reply = data.reply || "คำนวณเสร็จแล้วครับ";
     const reportUrl = data.report_url || null;
     const reportLine = reportUrl ? `\n\n📊 ดูรายงานฉบับเต็ม:\n${reportUrl}` : "";
@@ -481,9 +511,14 @@ async function submitForm() {
       alert(fullMessage);
     }
   } catch (err) {
-    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('loading-page').classList.remove('show');
+    document.body.style.overflow = '';
     document.getElementById('btnSubmit').disabled = false;
-    alert('เกิดข้อผิดพลาด: ' + err.message);
+    if (err.name === 'AbortError') {
+      alert('การเชื่อมต่อใช้เวลานานเกินไป (Server กำลัง Wake up) กรุณาลองใหม่อีกครั้งครับ');
+    } else {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+    }
   }
 }
 </script>
