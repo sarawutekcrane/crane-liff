@@ -402,8 +402,17 @@ async function loadDefaults() {
   }
 }
 
-liff.init({ liffId: LIFF_ID }).catch(err => console.error("LIFF init error:", err));
-loadDefaults();
+liff.init({ liffId: LIFF_ID })
+  .then(() => {
+    if (!liff.isLoggedIn() && liff.isInClient()) {
+      liff.login();
+    }
+    loadDefaults();
+  })
+  .catch(err => {
+    console.error("LIFF init error:", err);
+    loadDefaults();
+  });
 
 let selectedHitch = null;
 let selectedLegs = null;
@@ -544,7 +553,11 @@ async function submitForm() {
     const fullMessage = reply + reportLine;
 
     if (liff.isInClient()) {
-      await liff.sendMessages([{ type: 'text', text: fullMessage }]);
+      try {
+        await liff.sendMessages([{ type: 'text', text: fullMessage }]);
+      } catch (sendErr) {
+        console.error('sendMessages error:', sendErr);
+      }
       liff.closeWindow();
     } else {
       alert(fullMessage);
