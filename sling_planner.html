@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sling Planner</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+
+  :root {
+    --primary: #6b1a1a;
+    --accent: #c0392b;
+    --light: #fde8e8;
+    --bg: #f8f0f0;
+    --white: #ffffff;
+    --text: #222;
+    --sub: #666;
+    --danger: #e74c3c;
+    --success: #27ae60;
+    --border: #efdcdc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 90px;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(107,26,26,0.3);
+  }
+  .header h1 { font-size: 19px; font-weight: 700; }
+  .header p { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+
+  .card {
+    background: var(--white);
+    border-radius: 14px;
+    margin: 12px 14px;
+    padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--light);
+  }
+
+  .field { margin-bottom: 13px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--sub);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  label .req { color: var(--danger); margin-left: 3px; }
+  label .opt { color: #aaa; font-weight: 400; font-size: 11px; margin-left: 4px; }
+
+  input[type="number"] {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    color: var(--text);
+    background: #fafbfd;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.12);
+    background: white;
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Hitch Type Buttons */
+  .hitch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .hitch-btn {
+    padding: 12px 8px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    line-height: 1.4;
+  }
+  .hitch-btn.active {
+    border-color: var(--accent);
+    background: var(--light);
+    color: var(--accent);
+  }
+
+  /* Leg Count Buttons */
+  .leg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .leg-btn {
+    padding: 12px 4px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sub);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .leg-btn.active {
+    border-color: var(--accent);
+    background: var(--light);
+    color: var(--accent);
+  }
+  .leg-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0 10px;
+  }
+  .toggle-label { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+  .toggle-switch input { display: none; }
+  .slider {
+    position: absolute; inset: 0;
+    background: #ccc;
+    border-radius: 26px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .slider:before {
+    content: "";
+    position: absolute;
+    width: 20px; height: 20px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider:before { transform: translateX(22px); }
+
+  .collapsible { display: none; padding-top: 4px; }
+  .collapsible.open { display: block; }
+
+  .info-box {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  .section-label {
+    font-size: 12px;
+    color: var(--sub);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .section-label .req { color: var(--danger); }
+
+  .btn-submit {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    border: none;
+    padding: 17px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    z-index: 200;
+    transition: opacity 0.2s;
+  }
+  .btn-submit:active { opacity: 0.85; }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(107,26,26,0.7);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .overlay.show { display: flex; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay p { color: white; font-size: 15px; font-family: 'Sarabun', sans-serif; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚙️ Sling Planner</h1>
+  <p>ระบบคำนวณสลิงและการผูกมัด</p>
+</div>
+
+<!-- ข้อมูลหลัก -->
+<div class="card">
+  <div class="card-title">📦 น้ำหนักโหลด</div>
+  <div class="field">
+    <label>น้ำหนักโหลด (ตัน)<span class="req">*</span></label>
+    <input type="number" id="load_weight" placeholder="เช่น 25" step="0.1" min="0" inputmode="decimal">
+  </div>
+</div>
+
+<!-- วิธีผูกมัด -->
+<div class="card">
+  <div class="card-title">🔗 วิธีผูกมัด</div>
+  <p class="section-label">เลือกวิธีผูกมัด<span class="req">*</span></p>
+  <div class="hitch-grid">
+    <button class="hitch-btn" onclick="selectHitch('vertical', this)">
+      ⬆️ Vertical<br><span style="font-size:11px;font-weight:400">ยกตรงจากด้านบน</span>
+    </button>
+    <button class="hitch-btn" onclick="selectHitch('choker', this)">
+      🔄 Choker<br><span style="font-size:11px;font-weight:400">พันรอบโหลด</span>
+    </button>
+    <button class="hitch-btn" onclick="selectHitch('basket', this)">
+      🧺 Basket<br><span style="font-size:11px;font-weight:400">รองใต้โหลด</span>
+    </button>
+    <button class="hitch-btn" onclick="selectHitch('bridle', this)">
+      🌐 Bridle<br><span style="font-size:11px;font-weight:400">หลายขา</span>
+    </button>
+  </div>
+  <div class="info-box" id="hitch_info">← กรุณาเลือกวิธีผูกมัด</div>
+</div>
+
+<!-- จำนวนขาสลิง -->
+<div class="card">
+  <div class="card-title">🦵 จำนวนขาสลิง</div>
+  <p class="section-label">เลือกจำนวนขา<span class="req">*</span></p>
+  <div class="leg-grid">
+    <button class="leg-btn" id="leg1" onclick="selectLeg(1, this)">1 ขา</button>
+    <button class="leg-btn" id="leg2" onclick="selectLeg(2, this)">2 ขา</button>
+    <button class="leg-btn" id="leg3" onclick="selectLeg(3, this)">3 ขา</button>
+    <button class="leg-btn" id="leg4" onclick="selectLeg(4, this)">4 ขา</button>
+  </div>
+</div>
+
+<!-- มุมสลิง — แสดงหลัง hitch type -->
+<div class="card">
+  <div class="card-title">📐 มุมสลิง</div>
+  <div class="field">
+    <label>มุมสลิงจากแนวระดับ (องศา)</label>
+    <input type="number" id="sling_angle_from_horizontal" placeholder="เช่น 60 (แนะนำไม่น้อยกว่า 45°)" step="0.1" min="0" max="90" inputmode="decimal">
+  </div>
+  <div class="info-box">
+    ℹ️ หากไม่ทราบมุมสลิง ให้กรอกอย่างน้อย 2 ค่าด้านล่างแทน:<br>
+    • ความยาวสลิง + ระยะห่างระหว่างจุดผูกมัด<br>
+    • ความสูงจากจุดผูกมัดถึงตะขอ + ระยะห่างระหว่างจุดผูกมัด
+  </div>
+</div>
+
+<!-- ข้อมูลเพิ่มเติม (ถ้าไม่ทราบมุม) -->
+<div class="card">
+  <div class="card-title">📏 ข้อมูลเพิ่มเติม <span style="font-size:12px;font-weight:400;color:#888">(กรณีไม่ทราบมุมสลิง)</span></div>
+  <div class="field">
+    <label>ความยาวสลิง (เมตร)</label>
+    <input type="number" id="sling_length" placeholder="เช่น 8" step="0.1" min="0" inputmode="decimal">
+  </div>
+  <div class="field">
+    <label>ระยะห่างระหว่างจุดผูกมัด (เมตร)</label>
+    <input type="number" id="max_lifting_point_distance" placeholder="เช่น 4" step="0.1" min="0" inputmode="decimal">
+  </div>
+  <div class="field">
+    <label>ความสูงจากจุดผูกมัดถึงตะขอ (เมตร)</label>
+    <input type="number" id="vertical_height_hook_to_lifting_point" placeholder="เช่น 4" step="0.1" min="0" inputmode="decimal">
+  </div>
+</div>
+
+<!-- Safety Factor -->
+<div class="card">
+  <div class="card-title">⚙️ Safety Factor</div>
+  <div class="field">
+    <label>Safety Factor สลิง (%)</label>
+    <input type="number" id="sling_safety_factor_percent" placeholder="กำลังโหลด..." step="1" min="0" inputmode="numeric">
+  </div>
+</div>
+
+<!-- น้ำหนัก Rigging -->
+<div class="card">
+  <div class="toggle-row">
+    <span class="toggle-label">⚖️ รวมน้ำหนัก Rigging</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="tog_rig" onchange="toggle('sec_rig',this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="collapsible" id="sec_rig">
+    <div class="field">
+      <label>น้ำหนัก Rigging (ตัน)</label>
+      <input type="number" id="rigging_weight" placeholder="เช่น 0.5" step="0.01" min="0" inputmode="decimal">
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <p>กำลังคำนวณ...</p>
+</div>
+
+<button class="btn-submit" id="btnSubmit" onclick="submitForm()">
+  🔍 คำนวณสลิงที่ต้องใช้
+</button>
+
+<script>
+const LIFF_ID = "2010239215-oyHSlBvS";
+const API_URL = "https://crane-api-w9fj.onrender.com/select-sling";
+const DEFAULTS_URL = "https://crane-api-w9fj.onrender.com/defaults";
+
+let DEFAULTS = {};
+
+async function loadDefaults() {
+  try {
+    const res = await fetch(DEFAULTS_URL);
+    const data = await res.json();
+    if (data.ok && data.defaults) {
+      DEFAULTS = data.defaults;
+      const setPlaceholder = (id, key) => {
+        const el = document.getElementById(id);
+        if (el && DEFAULTS[key]) {
+          const v = DEFAULTS[key].value;
+          const u = DEFAULTS[key].unit || '';
+          el.placeholder = `${v} ${u} (Default)`.trim();
+        }
+      };
+      setPlaceholder('sling_safety_factor_percent', 'sling_safety_factor_percent');
+    }
+  } catch (e) {
+    console.warn('Could not load defaults:', e);
+  }
+}
+
+liff.init({ liffId: LIFF_ID }).catch(err => console.error("LIFF init error:", err));
+loadDefaults();
+
+let selectedHitch = null;
+let selectedLegs = null;
+
+const hitchInfo = {
+  vertical: "ยกตรงจากด้านบน ง่ายและตรงไปตรงมา SWL = พิกัดเต็ม",
+  choker: "พันสลิงรอบโหลด เพิ่มการยึดจับ แต่ลดกำลังสลิง ~75%",
+  basket: "สลิงรองใต้โหลด กำลังสูงสุด ~200% แต่โหลดต้องมีจุดรองรับ",
+  bridle: "ใช้หลายขาจากตะขอเดียว ต้องใช้อย่างน้อย 2 ขา มุมสลิงสำคัญมาก"
+};
+
+function selectHitch(hitch, btn) {
+  selectedHitch = hitch;
+  document.querySelectorAll('.hitch-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('hitch_info').textContent = "ℹ️ " + hitchInfo[hitch];
+  const leg1 = document.getElementById('leg1');
+  if (hitch === 'bridle') {
+    leg1.disabled = true;
+    if (selectedLegs === 1) {
+      selectedLegs = null;
+      document.querySelectorAll('.leg-btn').forEach(b => b.classList.remove('active'));
+    }
+  } else {
+    leg1.disabled = false;
+  }
+}
+
+function selectLeg(count, btn) {
+  if (btn.disabled) return;
+  selectedLegs = count;
+  document.querySelectorAll('.leg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggle(id, cb) {
+  document.getElementById(id).classList.toggle('open', cb.checked);
+}
+
+function getNum(id) {
+  const v = document.getElementById(id)?.value;
+  if (!v || v === '') return null;
+  const n = parseFloat(v);
+  return isNaN(n) || n === 0 ? null : n;
+}
+
+async function submitForm() {
+  const loadWeight = getNum('load_weight');
+  if (!loadWeight) { alert('กรุณากรอกน้ำหนักโหลดครับ'); return; }
+  if (!selectedHitch) { alert('กรุณาเลือกวิธีผูกมัดครับ'); return; }
+  if (!selectedLegs) { alert('กรุณาเลือกจำนวนขาสลิงครับ'); return; }
+
+  // ตรวจสอบข้อมูล geometry
+  const angle = getNum('sling_angle_from_horizontal');
+  const slingLen = getNum('sling_length');
+  const hookHeight = getNum('vertical_height_hook_to_lifting_point');
+  const pointDist = getNum('max_lifting_point_distance');
+
+  if (!angle) {
+    // ต้องมีอย่างน้อย 2 ค่าแทน
+    const hasLenDist = slingLen && pointDist;
+    const hasHeightDist = hookHeight && pointDist;
+    if (!hasLenDist && !hasHeightDist) {
+      let msg = '❌ ข้อมูล Geometry ไม่เพียงพอครับ
+
+กรุณากรอกอย่างใดอย่างหนึ่ง:
+';
+      msg += '• มุมสลิง (องศา)
+';
+      if (!slingLen && !hookHeight) {
+        msg += '• ความยาวสลิง + ระยะห่างจุดผูกมัด
+';
+        msg += '• ความสูงจากจุดผูกมัดถึงตะขอ + ระยะห่างจุดผูกมัด';
+      } else if (slingLen && !pointDist) {
+        msg += '
+⚠️ กรอกความยาวสลิงแล้ว กรุณากรอก "ระยะห่างจุดผูกมัด" เพิ่มด้วยครับ';
+      } else if (hookHeight && !pointDist) {
+        msg += '
+⚠️ กรอกความสูงถึงตะขอแล้ว กรุณากรอก "ระยะห่างจุดผูกมัด" เพิ่มด้วยครับ';
+      } else if (!slingLen && !hookHeight && pointDist) {
+        msg += '
+⚠️ กรอกระยะห่างจุดผูกมัดแล้ว กรุณากรอก "ความยาวสลิง" หรือ "ความสูงจากจุดผูกมัดถึงตะขอ" เพิ่มด้วยครับ';
+      }
+      alert(msg);
+      return;
+    }
+  }
+
+  const sfPercent = getNum('sling_safety_factor_percent');
+  const riggingWeight = getNum('rigging_weight');
+
+  const body = {
+    load_weight: loadWeight,
+    hitch_type: selectedHitch,
+    sling_leg_count: selectedLegs,
+    sling_angle_from_horizontal: getNum('sling_angle_from_horizontal'),
+    sling_length: getNum('sling_length'),
+    vertical_height_hook_to_lifting_point: getNum('vertical_height_hook_to_lifting_point'),
+    max_lifting_point_distance: getNum('max_lifting_point_distance'),
+    use_safety_factor: true,
+    sling_safety_factor_percent: sfPercent,
+    use_rigging_weight: riggingWeight !== null,
+    rigging_weight: riggingWeight,
+  };
+
+  Object.keys(body).forEach(k => { if (body[k] === null) delete body[k]; });
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('btnSubmit').disabled = true;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    const reply = data.reply || "คำนวณเสร็จแล้วครับ";
+    const reportUrl = data.report_url || null;
+    const reportLine = reportUrl ? `\n\n📊 ดูรายงานฉบับเต็ม:\n${reportUrl}` : "";
+    const fullMessage = reply + reportLine;
+
+    if (liff.isInClient()) {
+      await liff.sendMessages([{ type: 'text', text: fullMessage }]);
+      liff.closeWindow();
+    } else {
+      alert(fullMessage);
+    }
+  } catch (err) {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('btnSubmit').disabled = false;
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lift Planner</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+
+  :root {
+    --primary: #1a3a6b;
+    --accent: #2980b9;
+    --light: #e8f0fe;
+    --bg: #f0f4f8;
+    --white: #ffffff;
+    --text: #222;
+    --sub: #666;
+    --danger: #e74c3c;
+    --success: #27ae60;
+    --border: #dce3ef;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 90px;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(26,58,107,0.3);
+  }
+  .header h1 { font-size: 19px; font-weight: 700; letter-spacing: 0.3px; }
+  .header p { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+
+  .card {
+    background: var(--white);
+    border-radius: 14px;
+    margin: 12px 14px;
+    padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--light);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .field { margin-bottom: 13px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--sub);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  label .req { color: var(--danger); margin-left: 3px; }
+  label .opt { color: #aaa; font-weight: 400; font-size: 11px; margin-left: 4px; }
+
+  input[type="number"], select {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    color: var(--text);
+    background: #fafbfd;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type="number"]:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(41,128,185,0.12);
+    background: white;
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0 10px;
+  }
+  .toggle-label { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+  .toggle-switch input { display: none; }
+  .slider {
+    position: absolute; inset: 0;
+    background: #ccc;
+    border-radius: 26px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .slider:before {
+    content: "";
+    position: absolute;
+    width: 20px; height: 20px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider:before { transform: translateX(22px); }
+
+  .collapsible { display: none; padding-top: 4px; }
+  .collapsible.open { display: block; }
+
+  /* Submit */
+  .btn-submit {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    border: none;
+    padding: 17px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s;
+    z-index: 200;
+  }
+  .btn-submit:active { opacity: 0.85; }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Loading overlay */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,58,107,0.7);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .overlay.show { display: flex; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay p { color: white; font-size: 15px; font-family: 'Sarabun', sans-serif; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏗️ Lift Planner</h1>
+  <p>ระบบคำนวณงานยกด้วยเครน</p>
+</div>
+
+<!-- ข้อมูลหลัก -->
+<div class="card">
+  <div class="card-title">📦 ข้อมูลหลัก</div>
+  <div class="row2">
+    <div class="field">
+      <label>น้ำหนักโหลด (ตัน)<span class="req">*</span></label>
+      <input type="number" id="load_weight" placeholder="เช่น 25" step="0.1" min="0" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label>รัศมียก (เมตร)<span class="req">*</span></label>
+      <input type="number" id="radius" placeholder="เช่น 18" step="0.1" min="0" inputmode="decimal">
+    </div>
+  </div>
+  <div class="field">
+    <label>รุ่นเครน<span class="opt">(ไม่บังคับ)</span></label>
+    <select id="preferred_crane_model">
+      <option value="ALL">ค้นหาทุกรุ่น</option>
+      <option value="AR5500M-1">AR5500M-1</option>
+      <option value="AR1600M-1">AR1600M-1</option>
+    </select>
+  </div>
+</div>
+
+<!-- Safety Factor -->
+<div class="card">
+  <div class="card-title">⚙️ Safety Factor</div>
+  <div class="field">
+    <label>Safety Factor (%)</label>
+    <input type="number" id="safety_factor_percent" placeholder="กำลังโหลด..." step="1" min="0" max="100" inputmode="numeric">
+  </div>
+</div>
+
+<!-- ความสูง -->
+<div class="card">
+  <div class="toggle-row">
+    <span class="toggle-label">📏 ข้อมูลความสูง</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="tog_h" onchange="toggle('sec_h',this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="collapsible" id="sec_h">
+    <div class="row2">
+      <div class="field">
+        <label>ความสูงที่ยก (เมตร)<span class="opt">ก้นโหลดจากพื้น</span></label>
+        <input type="number" id="lift_height" placeholder="เช่น 16" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>ความสูงโหลด (เมตร)</label>
+        <input type="number" id="object_height" placeholder="เช่น 3" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>ความกว้างโหลดตามรัศมี (เมตร)</label>
+        <input type="number" id="load_width_radial" placeholder="เช่น 4" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>ระยะจุดผูกมัดถึงตะขอ (เมตร)</label>
+        <input type="number" id="rigging_point_height_from_load_top" placeholder="เช่น 4" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Clearance ใต้บูม (เมตร)</label>
+        <input type="number" id="load_clearance" placeholder="1.0 (Default)" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>ระยะรอกถึงตะขอ (เมตร)</label>
+        <input type="number" id="hook_drop_from_sheave" placeholder="3.0 (Default)" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- สิ่งกีดขวาง -->
+<div class="card">
+  <div class="toggle-row">
+    <span class="toggle-label">🚧 สิ่งกีดขวางใต้บูม</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="tog_under" onchange="toggle('sec_under',this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="collapsible" id="sec_under">
+    <div class="row2">
+      <div class="field">
+        <label>ระยะจากจุดกึ่งกลางเครน (เมตร)</label>
+        <input type="number" id="underside_obstacle_distance" placeholder="เช่น 10" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>ความสูงสิ่งกีดขวาง (เมตร)</label>
+        <input type="number" id="underside_obstacle_height" placeholder="เช่น 10" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>ความยาวแนวรัศมี (เมตร)</label>
+        <input type="number" id="underside_obstacle_width_radial" placeholder="เช่น 8" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field">
+      <label>Clearance ใต้บูม (เมตร)</label>
+      <input type="number" id="underside_obstacle_clearance" placeholder="1.0 (Default)" step="0.1" min="0" inputmode="decimal">
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="toggle-row">
+    <span class="toggle-label">🚧 สิ่งกีดขวางหลังบูม</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="tog_back" onchange="toggle('sec_back',this)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="collapsible" id="sec_back">
+    <div class="row2">
+      <div class="field">
+        <label>ระยะจากจุดกึ่งกลางเครน (เมตร)</label>
+        <input type="number" id="back_obstacle_distance" placeholder="เช่น 5" step="0.1" min="0" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>ความสูงจากระดับพื้น (เมตร)</label>
+        <input type="number" id="back_obstacle_limit_height" placeholder="เช่น 20" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>ความยาวแนวรัศมี (เมตร)</label>
+        <input type="number" id="back_obstacle_width_radial" placeholder="เช่น 4" step="0.1" min="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field">
+      <label>Clearance หลังบูม (เมตร)</label>
+      <input type="number" id="back_obstacle_clearance" placeholder="1.0 (Default)" step="0.1" min="0" inputmode="decimal">
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <p>กำลังคำนวณ...</p>
+</div>
+
+<button class="btn-submit" id="btnSubmit" onclick="submitForm()">
+  🔍 คำนวณหาเครนที่เหมาะสม
+</button>
+
+<script>
+const LIFF_ID = "2010239215-NUKeSbNT";
+const API_URL = "https://crane-api-w9fj.onrender.com/select-crane";
+const DEFAULTS_URL = "https://crane-api-w9fj.onrender.com/defaults";
+
+let DEFAULTS = {};
+
+async function loadDefaults() {
+  try {
+    const res = await fetch(DEFAULTS_URL);
+    const data = await res.json();
+    if (data.ok && data.defaults) {
+      DEFAULTS = data.defaults;
+      // ใส่ placeholder ด้วยค่าจาก Excel
+      const setPlaceholder = (id, key) => {
+        const el = document.getElementById(id);
+        if (el && DEFAULTS[key]) {
+          const v = DEFAULTS[key].value;
+          const u = DEFAULTS[key].unit || '';
+          el.placeholder = `${v} ${u} (Default)`.trim();
+        }
+      };
+      setPlaceholder('safety_factor_percent', 'safety_factor_percent');
+      setPlaceholder('load_clearance', 'load_clearance');
+      setPlaceholder('hook_drop_from_sheave', 'hook_drop_from_sheave');
+      setPlaceholder('underside_obstacle_clearance', 'underside_obstacle_clearance');
+      setPlaceholder('back_obstacle_clearance', 'back_obstacle_clearance');
+    }
+  } catch (e) {
+    console.warn('Could not load defaults:', e);
+  }
+}
+
+liff.init({ liffId: LIFF_ID }).catch(err => console.error("LIFF init error:", err));
+loadDefaults();
+
+function toggle(id, cb) {
+  document.getElementById(id).classList.toggle('open', cb.checked);
+}
+
+function getNum(id, defaultVal) {
+  const v = document.getElementById(id)?.value;
+  if (!v || v === '') return defaultVal !== undefined ? defaultVal : null;
+  const n = parseFloat(v);
+  if (isNaN(n)) return defaultVal !== undefined ? defaultVal : null;
+  if (n === 0) return defaultVal !== undefined ? defaultVal : null;
+  return n;
+}
+
+function getBool(id) {
+  return document.getElementById(id)?.checked || false;
+}
+
+async function submitForm() {
+  const loadWeight = getNum('load_weight');
+  const radius = getNum('radius');
+
+  if (!loadWeight || !radius) {
+    alert('กรุณากรอกน้ำหนักโหลดและรัศมียกครับ');
+    return;
+  }
+
+  // ตรวจสอบ obstacle ว่ากรอกครบไหม
+  if (getBool('tog_under')) {
+    const uDist = getNum('underside_obstacle_distance');
+    const uHeight = getNum('underside_obstacle_height');
+    if (!uDist && !uHeight) {
+      alert('⚠️ เปิดสิ่งกีดขวางใต้บูมแล้ว
+กรุณากรอก "ระยะจากแกนหมุน" และ "ความสูงสิ่งกีดขวาง" ด้วยครับ');
+      return;
+    } else if (!uDist) {
+      alert('⚠️ กรุณากรอก "ระยะจากแกนหมุน" ของสิ่งกีดขวางใต้บูมด้วยครับ');
+      return;
+    } else if (!uHeight) {
+      alert('⚠️ กรุณากรอก "ความสูงสิ่งกีดขวาง" ของสิ่งกีดขวางใต้บูมด้วยครับ');
+      return;
+    }
+  }
+
+  if (getBool('tog_back')) {
+    const bDist = getNum('back_obstacle_distance');
+    const bHeight = getNum('back_obstacle_limit_height');
+    if (!bDist && !bHeight) {
+      alert('⚠️ เปิดสิ่งกีดขวางหลังบูมแล้ว
+กรุณากรอก "ระยะจากแกนหมุน" และ "ความสูงต่ำสุด" ด้วยครับ');
+      return;
+    } else if (!bDist) {
+      alert('⚠️ กรุณากรอก "ระยะจากแกนหมุน" ของสิ่งกีดขวางหลังบูมด้วยครับ');
+      return;
+    } else if (!bHeight) {
+      alert('⚠️ กรุณากรอก "ความสูงต่ำสุด" ของสิ่งกีดขวางหลังบูมด้วยครับ');
+      return;
+    }
+  }
+
+  const body = {
+    load_weight: loadWeight,
+    radius: radius,
+    preferred_crane_model: document.getElementById('preferred_crane_model').value,
+    safety_factor_percent: getNum('safety_factor_percent'),
+    lift_height: getBool('tog_h') ? getNum('lift_height') : null,
+    object_height: getBool('tog_h') ? getNum('object_height') : null,
+    load_width_radial: getBool('tog_h') ? getNum('load_width_radial') : null,
+    rigging_point_height_from_load_top: getBool('tog_h') ? getNum('rigging_point_height_from_load_top') : null,
+    load_clearance: getBool('tog_h') ? getNum('load_clearance', 1.0) : null,
+    hook_drop_from_sheave: getBool('tog_h') ? getNum('hook_drop_from_sheave', 3.0) : null,
+    use_underside_obstacle_check: getBool('tog_under'),
+    underside_obstacle_distance: getBool('tog_under') ? getNum('underside_obstacle_distance') : null,
+    underside_obstacle_height: getBool('tog_under') ? getNum('underside_obstacle_height') : null,
+    underside_obstacle_width_radial: getBool('tog_under') ? getNum('underside_obstacle_width_radial') : null,
+    underside_obstacle_clearance: getBool('tog_under') ? getNum('underside_obstacle_clearance', 1.0) : null,
+    use_back_obstacle_check: getBool('tog_back'),
+    back_obstacle_distance: getBool('tog_back') ? getNum('back_obstacle_distance') : null,
+    back_obstacle_limit_height: getBool('tog_back') ? getNum('back_obstacle_limit_height') : null,
+    back_obstacle_width_radial: getBool('tog_back') ? getNum('back_obstacle_width_radial') : null,
+    back_obstacle_clearance: getBool('tog_back') ? getNum('back_obstacle_clearance', 1.0) : null,
+  };
+
+  // ลบ null ออก
+  Object.keys(body).forEach(k => { if (body[k] === null) delete body[k]; });
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('btnSubmit').disabled = true;
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    // ส่งผลกลับเข้า LINE chat
+    const reply = data.reply || "คำนวณเสร็จแล้วครับ";
+    const reportUrl = data.report_url || null;
+    const reportLine = reportUrl ? `\n\n📊 ดูรายงานฉบับเต็ม:\n${reportUrl}` : "";
+    const fullMessage = reply + reportLine + "\n\nต้องการให้คำนวณเลือกสลิงสำหรับงานนี้ต่อเลยไหมครับ?";
+
+    if (liff.isInClient()) {
+      await liff.sendMessages([{ type: 'text', text: fullMessage }]);
+      liff.closeWindow();
+    } else {
+      alert(fullMessage);
+    }
+  } catch (err) {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('btnSubmit').disabled = false;
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  }
+}
+</script>
+</body>
+</html>
