@@ -378,6 +378,7 @@
 const LIFF_ID = "2010239215-oyHSlBvS";
 const API_URL = "https://crane-api-w9fj.onrender.com/select-sling";
 const DEFAULTS_URL = "https://crane-api-w9fj.onrender.com/defaults";
+const N8N_WEBHOOK_URL = "https://untaken-launder-purge.ngrok-free.app/webhook/liff-result";
 
 let DEFAULTS = {};
 
@@ -540,20 +541,22 @@ async function submitForm() {
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const data = await res.json();
 
-    const reply = data.reply || "คำนวณเสร็จแล้วครับ";
-    const reportUrl = data.report_url || null;
-    const reportLine = reportUrl ? `\n\n📊 ดูรายงานฉบับเต็ม:\n${reportUrl}` : "";
-    const fullMessage = "[LIFF_RESULT]" + reply + reportLine;
+    const userId = liff.isInClient() ? liff.getContext()?.userId : null;
+    await fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: userId,
+        source: "liff_sling",
+        sling_input: body,
+        api_response: data
+      })
+    });
 
     if (liff.isInClient()) {
-      try {
-        await liff.sendMessages([{ type: 'text', text: fullMessage }]);
-      } catch (sendErr) {
-        console.error('sendMessages error:', sendErr);
-      }
       liff.closeWindow();
     } else {
-      alert(fullMessage);
+      alert(data.reply || "คำนวณเสร็จแล้วครับ");
     }
   } catch (err) {
     document.getElementById('loading-page').classList.remove('show');
