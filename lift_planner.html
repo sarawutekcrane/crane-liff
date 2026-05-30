@@ -515,7 +515,10 @@ async function submitForm() {
     const userId = liff.isInClient() ? liff.getContext()?.userId : null;
     await fetch(N8N_WEBHOOK_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
       body: JSON.stringify({
         userId: userId,
         source: "liff_crane",
