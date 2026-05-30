@@ -383,6 +383,10 @@ async function loadDefaults() {
   }
 }
 
+// Wake up Render server ก่อนเลย
+fetch(API_URL.replace('/select-crane', '/health').replace('/select-sling', '/health'))
+  .catch(() => {});
+
 liff.init({ liffId: LIFF_ID })
   .then(() => {
     if (!liff.isLoggedIn() && liff.isInClient()) {
@@ -509,7 +513,7 @@ async function submitForm() {
     const reply = data.reply || "คำนวณเสร็จแล้วครับ";
     const reportUrl = data.report_url || null;
     const reportLine = reportUrl ? `\n\n📊 ดูรายงานฉบับเต็ม:\n${reportUrl}` : "";
-    const fullMessage = reply + reportLine + "\n\nต้องการให้คำนวณเลือกสลิงสำหรับงานนี้ต่อเลยไหมครับ?";
+    const fullMessage = "[LIFF_RESULT]" + reply + reportLine + "\n\nต้องการให้คำนวณเลือกสลิงสำหรับงานนี้ต่อเลยไหมครับ?";
 
     if (liff.isInClient()) {
       try {

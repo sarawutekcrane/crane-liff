@@ -402,6 +402,10 @@ async function loadDefaults() {
   }
 }
 
+// Wake up Render server ก่อนเลย
+fetch(API_URL.replace('/select-crane', '/health').replace('/select-sling', '/health'))
+  .catch(() => {});
+
 liff.init({ liffId: LIFF_ID })
   .then(() => {
     if (!liff.isLoggedIn() && liff.isInClient()) {
@@ -479,36 +483,25 @@ async function submitForm() {
   const pointDist = getNum('max_lifting_point_distance');
 
   if (!angle) {
-    // ต้องมีอย่างน้อย 2 ค่าแทน
     const hasLenDist = slingLen && pointDist;
     const hasHeightDist = hookHeight && pointDist;
     if (!hasLenDist && !hasHeightDist) {
-      let msg = '❌ ข้อมูล Geometry ไม่เพียงพอครับ
-
-กรุณากรอกอย่างใดอย่างหนึ่ง:
-';
-      msg += '• มุมสลิง (องศา)
-';
-      if (!slingLen && !hookHeight) {
-        msg += '• ความยาวสลิง + ระยะห่างจุดผูกมัด
-';
-        msg += '• ความสูงจากจุดผูกมัดถึงตะขอ + ระยะห่างจุดผูกมัด';
-      } else if (slingLen && !pointDist) {
-        msg += '
-⚠️ กรอกความยาวสลิงแล้ว กรุณากรอก "ระยะห่างจุดผูกมัด" เพิ่มด้วยครับ';
+      let msg = 'ข้อมูล Geometry ไม่เพียงพอครับ';
+      if (slingLen && !pointDist) {
+        msg = 'กรอกความยาวสลิงแล้ว กรุณากรอก ระยะห่างจุดผูกมัด เพิ่มด้วยครับ';
       } else if (hookHeight && !pointDist) {
-        msg += '
-⚠️ กรอกความสูงถึงตะขอแล้ว กรุณากรอก "ระยะห่างจุดผูกมัด" เพิ่มด้วยครับ';
+        msg = 'กรอกความสูงถึงตะขอแล้ว กรุณากรอก ระยะห่างจุดผูกมัด เพิ่มด้วยครับ';
       } else if (!slingLen && !hookHeight && pointDist) {
-        msg += '
-⚠️ กรอกระยะห่างจุดผูกมัดแล้ว กรุณากรอก "ความยาวสลิง" หรือ "ความสูงจากจุดผูกมัดถึงตะขอ" เพิ่มด้วยครับ';
+        msg = 'กรอกระยะห่างจุดผูกมัดแล้ว กรุณากรอก ความยาวสลิง หรือ ความสูงจากจุดผูกมัดถึงตะขอ เพิ่มด้วยครับ';
+      } else {
+        msg = 'กรุณากรอกมุมสลิง หรือ ความยาวสลิง+ระยะห่างจุดผูก หรือ ความสูงถึงตะขอ+ระยะห่างจุดผูกครับ';
       }
       alert(msg);
       return;
     }
   }
 
-  const sfPercent = getNum('sling_safety_factor_percent');
+    const sfPercent = getNum('sling_safety_factor_percent');
   const riggingWeight = getNum('rigging_weight');
 
   const body = {
@@ -550,7 +543,7 @@ async function submitForm() {
     const reply = data.reply || "คำนวณเสร็จแล้วครับ";
     const reportUrl = data.report_url || null;
     const reportLine = reportUrl ? `\n\n📊 ดูรายงานฉบับเต็ม:\n${reportUrl}` : "";
-    const fullMessage = reply + reportLine;
+    const fullMessage = "[LIFF_RESULT]" + reply + reportLine;
 
     if (liff.isInClient()) {
       try {
