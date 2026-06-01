@@ -40,8 +40,8 @@
     z-index: 100;
     box-shadow: 0 2px 12px rgba(107,26,26,0.3);
   }
-  .header h1 { font-size: 19px; font-weight: 700; }
-  .header p { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+  .header h1 { font-size: 38px; font-weight: 700; }
+  .header p { font-size: 24px; opacity: 0.8; margin-top: 3px; }
 
   .card {
     background: var(--white);
@@ -52,7 +52,7 @@
   }
 
   .card-title {
-    font-size: 14px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--primary);
     margin-bottom: 14px;
@@ -65,13 +65,13 @@
 
   label {
     display: block;
-    font-size: 12.5px;
+    font-size: 25px;
     color: var(--sub);
     margin-bottom: 5px;
     font-weight: 600;
   }
   label .req { color: var(--danger); margin-left: 3px; }
-  label .opt { color: #aaa; font-weight: 400; font-size: 11px; margin-left: 4px; }
+  label .opt { color: #aaa; font-weight: 400; font-size: 44px; margin-left: 4px; }
 
   input[type="number"] {
     width: 100%;
@@ -107,7 +107,7 @@
     border-radius: 10px;
     background: white;
     font-family: 'Sarabun', sans-serif;
-    font-size: 13px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--sub);
     cursor: pointer;
@@ -137,7 +137,7 @@
     border-radius: 10px;
     background: white;
     font-family: 'Sarabun', sans-serif;
-    font-size: 14px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--sub);
     cursor: pointer;
@@ -161,7 +161,7 @@
     justify-content: space-between;
     padding: 4px 0 10px;
   }
-  .toggle-label { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .toggle-label { font-size: 27px; font-weight: 700; color: var(--text); }
   .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
   .toggle-switch input { display: none; }
   .slider {
@@ -192,13 +192,13 @@
     border: 1px solid #ffe082;
     border-radius: 8px;
     padding: 9px 12px;
-    font-size: 12px;
+    font-size: 24px;
     color: #666;
     margin-top: 8px;
   }
 
   .section-label {
-    font-size: 12px;
+    font-size: 24px;
     color: var(--sub);
     font-weight: 600;
     margin-bottom: 8px;
@@ -212,7 +212,7 @@
     color: white;
     border: none;
     padding: 17px;
-    font-size: 16px;
+    font-size: 32px;
     font-weight: 700;
     font-family: 'Sarabun', sans-serif;
     cursor: pointer;
@@ -244,7 +244,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-title {
     color: white;
-    font-size: 22px;
+    font-size: 44px;
     font-weight: 700;
     font-family: 'Sarabun', sans-serif;
   }
@@ -323,8 +323,10 @@
     <input type="number" id="sling_angle_from_horizontal" placeholder="เช่น 60 (แนะนำไม่น้อยกว่า 45°)" step="0.1" min="0" max="90" inputmode="decimal">
   </div>
   <div class="info-box">
-    ℹ️ หากไม่ทราบมุมสลิง ให้กรอกอย่างน้อย 2 ค่าด้านล่างแทน:<br>
+    ℹ️ มุมสลิง คำนวณได้จาก ความยาวสลิง + ความสูงจากจุดผูกมัดถึงตะขอ<br><br>
+    หากไม่ทราบมุมสลิง ให้กรอกอย่างน้อย 2 ค่าด้านล่างแทน:<br>
     • ความยาวสลิง + ระยะห่างระหว่างจุดผูกมัด<br>
+    • ความยาวสลิง + ความสูงจากจุดผูกมัดถึงตะขอ<br>
     • ความสูงจากจุดผูกมัดถึงตะขอ + ระยะห่างระหว่างจุดผูกมัด
   </div>
 </div>
