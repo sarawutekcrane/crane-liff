@@ -40,8 +40,8 @@
     z-index: 100;
     box-shadow: 0 2px 12px rgba(26,58,107,0.3);
   }
-  .header h1 { font-size: 28px; font-weight: 700; letter-spacing: 0.3px; }
-  .header p { font-size: 30px; opacity: 0.8; margin-top: 3px; }
+  .header h1 { font-size: clamp(18px, 5vw, 38px); font-weight: 700; letter-spacing: 0.3px; }
+  .header p { font-size: clamp(12px, 3vw, 24px); opacity: 0.8; margin-top: 3px; }
 
   .card {
     background: var(--white);
@@ -52,7 +52,7 @@
   }
 
   .card-title {
-    font-size: 27px;
+    font-size: clamp(14px, 3.5vw, 28px);
     font-weight: 700;
     color: var(--primary);
     margin-bottom: 14px;
@@ -68,13 +68,13 @@
 
   label {
     display: block;
-    font-size: 25px;
+    font-size: clamp(14px, 3.5vw, 25px);
     color: var(--sub);
     margin-bottom: 5px;
     font-weight: 600;
   }
   label .req { color: var(--danger); margin-left: 3px; }
-  label .opt { color: #aaa; font-weight: 400; font-size: 22px; margin-left: 4px; }
+  label .opt { color: #aaa; font-weight: 400; font-size: clamp(11px, 2.8vw, 22px); margin-left: 4px; }
 
   input[type="number"], select {
     width: 100%;
@@ -104,7 +104,7 @@
     justify-content: space-between;
     padding: 4px 0 10px;
   }
-  .toggle-label { font-size: 28px; font-weight: 700; color: var(--text); }
+  .toggle-label { font-size: clamp(14px, 3.5vw, 25px); font-weight: 700; color: var(--text); }
   .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
   .toggle-switch input { display: none; }
   .slider {
@@ -138,7 +138,7 @@
     color: white;
     border: none;
     padding: 17px;
-    font-size: 24px;
+    font-size: clamp(15px, 4vw, 32px);
     font-weight: 700;
     font-family: 'Sarabun', sans-serif;
     cursor: pointer;
