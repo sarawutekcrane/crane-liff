@@ -339,6 +339,17 @@
   </div>
 </div>
 
+<!-- Narrow Area Mode -->
+<div class="section">
+  <div class="toggle-row">
+    <span class="toggle-label">🚧 พื้นที่แคบ (เลือกขาก่อน CW)</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="tog_narrow">
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
 <!-- Loading Page -->
 <div id="loading-page">
   <div class="spinner"></div>
@@ -484,6 +495,7 @@ async function submitForm() {
     back_obstacle_limit_height: getBool('tog_back') ? getNum('back_obstacle_limit_height') : null,
     back_obstacle_width_radial: getBool('tog_back') ? getNum('back_obstacle_width_radial') : null,
     back_obstacle_clearance: getBool('tog_back') ? getNum('back_obstacle_clearance', 1.0) : null,
+    narrow_area: getBool('tog_narrow'),
   };
 
   // ลบ null ออก
@@ -534,6 +546,7 @@ async function submitForm() {
       if (body.back_obstacle_width_radial) parts.push(`back_width=${body.back_obstacle_width_radial}`);
       if (body.back_obstacle_clearance) parts.push(`back_clearance=${body.back_obstacle_clearance}`);
     }
+    if (body.narrow_area) parts.push(`narrow_area=true`);
     const liffMessage = parts.join("|");
 
     if (liff.isInClient()) {
