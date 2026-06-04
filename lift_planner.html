@@ -216,9 +216,11 @@
     <label>รุ่นเครน<span class="opt">(ไม่บังคับ)</span></label>
     <select id="preferred_crane_model">
       <option value="ALL">ค้นหาทุกรุ่น</option>
-      <option value="AR5500M-1">AR5500M-1</option>
-      <option value="AR1600M-1">AR1600M-1</option>
     </select>
+  </div>
+  <div class="form-group">
+    <label>ขนาดเครน (ตัน) — ถ้าระบุจะยกเลิกการเลือกรุ่น</label>
+    <input type="number" id="preferred_crane_size_ton" placeholder="เช่น 550 (ว่าง = ทุกขนาด)" min="0" step="1">
   </div>
 </div>
 
@@ -365,8 +367,28 @@
 const LIFF_ID = "2010239215-NUKeSbNT";
 const API_URL = "https://crane-api-w9fj.onrender.com/select-crane";
 const DEFAULTS_URL = "https://crane-api-w9fj.onrender.com/defaults";
+const CRANE_MODELS_URL = "https://crane-api-w9fj.onrender.com/crane-models";
 
 let DEFAULTS = {};
+
+async function loadCraneModels() {
+  try {
+    const res = await fetch(CRANE_MODELS_URL);
+    const data = await res.json();
+    if (data.ok && data.models && data.models.length > 0) {
+      const sel = document.getElementById("preferred_crane_model");
+      while (sel.options.length > 1) sel.remove(1);
+      data.models.forEach(model => {
+        const opt = document.createElement("option");
+        opt.value = model;
+        opt.textContent = model;
+        sel.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.warn("Could not load crane models:", e);
+  }
+}
 
 async function loadDefaults() {
   try {
@@ -397,6 +419,8 @@ async function loadDefaults() {
 // Wake up Render server ก่อนเลย
 fetch(API_URL.replace('/select-crane', '/health').replace('/select-sling', '/health'))
   .catch(() => {});
+
+loadCraneModels();
 
 liff.init({ liffId: LIFF_ID })
   .then(() => {
@@ -477,7 +501,17 @@ async function submitForm() {
   const body = {
     load_weight: loadWeight,
     radius: radius,
-    preferred_crane_model: document.getElementById('preferred_crane_model').value,
+    preferred_crane_model: (() => {
+      const sizeVal = parseFloat(document.getElementById('preferred_crane_size_ton').value);
+      if (sizeVal > 0) return null; // ถ้าระบุขนาด → ล้างรุ่น
+      const v = document.getElementById('preferred_crane_model').value;
+      return v === 'ALL' ? null : v;
+    })(),
+    preferred_crane_size_ton: (() => {
+      const modelVal = document.getElementById('preferred_crane_model').value;
+      if (modelVal !== 'ALL') return null; // ถ้าระบุรุ่น → ล้างขนาด
+      return parseFloat(document.getElementById('preferred_crane_size_ton').value) || null;
+    })(),
     safety_factor_percent: getNum('safety_factor_percent'),
     lift_height: getBool('tog_h') ? getNum('lift_height') : null,
     object_height: getBool('tog_h') ? getNum('object_height') : null,
@@ -534,6 +568,7 @@ async function submitForm() {
     if (body.load_clearance) parts.push(`load_clearance=${body.load_clearance}`);
     if (body.hook_drop_from_sheave) parts.push(`hook_drop=${body.hook_drop_from_sheave}`);
     if (body.preferred_crane_model && body.preferred_crane_model !== "ALL") parts.push(`crane_model=${body.preferred_crane_model}`);
+    if (body.preferred_crane_size_ton) parts.push(`crane_size_ton=${body.preferred_crane_size_ton}`);
     if (body.use_underside_obstacle_check) {
       parts.push(`underside_dist=${body.underside_obstacle_distance}`);
       parts.push(`underside_height=${body.underside_obstacle_height}`);
