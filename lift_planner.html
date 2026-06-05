@@ -218,12 +218,7 @@
       <option value="ALL">ค้นหาทุกรุ่น</option>
     </select>
   </div>
-  <div class="form-group">
-    <label>ขนาดเครน (ตัน) — ถ้าระบุจะยกเลิกการเลือกรุ่น</label>
-    <input type="number" id="preferred_crane_size_ton" placeholder="เช่น 550 (ว่าง = ทุกขนาด)" min="0" step="1">
-  </div>
-</div>
-
+  
 <!-- Safety Factor -->
 <div class="card">
   <div class="card-title">⚙️ Safety Factor</div>
@@ -502,15 +497,8 @@ async function submitForm() {
     load_weight: loadWeight,
     radius: radius,
     preferred_crane_model: (() => {
-      const sizeVal = parseFloat(document.getElementById('preferred_crane_size_ton').value);
-      if (sizeVal > 0) return null; // ถ้าระบุขนาด → ล้างรุ่น
       const v = document.getElementById('preferred_crane_model').value;
       return v === 'ALL' ? null : v;
-    })(),
-    preferred_crane_size_ton: (() => {
-      const modelVal = document.getElementById('preferred_crane_model').value;
-      if (modelVal !== 'ALL') return null; // ถ้าระบุรุ่น → ล้างขนาด
-      return parseFloat(document.getElementById('preferred_crane_size_ton').value) || null;
     })(),
     safety_factor_percent: getNum('safety_factor_percent'),
     lift_height: getBool('tog_h') ? getNum('lift_height') : null,
@@ -568,7 +556,7 @@ async function submitForm() {
     if (body.load_clearance) parts.push(`load_clearance=${body.load_clearance}`);
     if (body.hook_drop_from_sheave) parts.push(`hook_drop=${body.hook_drop_from_sheave}`);
     if (body.preferred_crane_model && body.preferred_crane_model !== "ALL") parts.push(`crane_model=${body.preferred_crane_model}`);
-    if (body.preferred_crane_size_ton) parts.push(`crane_size_ton=${body.preferred_crane_size_ton}`);
+    
     if (body.use_underside_obstacle_check) {
       parts.push(`underside_dist=${body.underside_obstacle_distance}`);
       parts.push(`underside_height=${body.underside_obstacle_height}`);
