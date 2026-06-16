@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>วิธีอ่าน Error Code</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 20px;
+      color: #8b1a1a;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+      color: #333;
+    }
+    select:disabled {
+      background: #f0f0f0;
+      color: #999;
+    }
+    .operation-type {
+      display: flex;
+      gap: 10px;
+    }
+    .operation-type label {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: normal;
+      font-size: 15px;
+    }
+    .operation-type input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #8b1a1a;
+    }
+    .operation-type label:has(input:checked) {
+      border-color: #8b1a1a;
+      background: #fff5f5;
+      color: #8b1a1a;
+      font-weight: bold;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #8b1a1a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #8b1a1a;
+      border: 2px solid #8b1a1a;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .hint {
+      color: #888;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 20px 0;
+    }
+    .info-box {
+      background: #fff8e1;
+      border-left: 4px solid #f9a825;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📋 วิธีอ่าน Error Code</h1>
+
+    <div class="info-box">
+      เลือกรถและกล่องควบคุมที่ต้องการดูวิธีการอ่านหรือ reset รหัส error
+    </div>
+
+    <div class="form-group">
+      <label>เบอร์รถ</label>
+      <select id="crane_no" onchange="onCraneChange()">
+        <option value="">-- กำลังโหลด --</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>กล่องควบคุม</label>
+      <select id="group" disabled onchange="checkReady()">
+        <option value="">-- เลือกรถก่อน --</option>
+      </select>
+      <p class="hint">ถ้าไม่แน่ใจ เลือก "ทุกกล่อง" เพื่อดูทั้งหมด</p>
+    </div>
+
+    <div class="form-group">
+      <label>ประเภท</label>
+      <div class="operation-type">
+        <label>
+          <input type="radio" name="operation_type" value="read" checked
+            onchange="checkReady()">
+          📖 วิธีอ่านค่า
+        </label>
+        <label>
+          <input type="radio" name="operation_type" value="reset"
+            onchange="checkReady()">
+          🔄 วิธี Reset
+        </label>
+      </div>
+    </div>
+
+    <button class="btn" id="btn_view" onclick="submit()" disabled>
+      📋 ดูวิธีการ
+    </button>
+
+    <hr class="divider">
+
+    <button class="btn-secondary" onclick="liff.closeWindow()">
+      ปิด
+    </button>
+  </div>
+
+  <script>
+    const BASE_URL = "https://crane-api-w9fj.onrender.com";
+    const LIFF_ID = "2010239215-NUKeSbNT"; // ← เปลี่ยนเป็น LIFF ID จริง
+
+    async function init() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        loadCranes();
+      } catch(e) {
+        console.error("LIFF init error:", e);
+      }
+    }
+
+    async function loadCranes() {
+      try {
+        const res = await fetch(`${BASE_URL}/crane-list`);
+        const data = await res.json();
+        const sel = document.getElementById("crane_no");
+        sel.innerHTML = '<option value="">-- เลือกรถ --</option>';
+        data.cranes.forEach(c => {
+          sel.innerHTML +=
+            `<option value="${c.crane_no}">${c.crane_no} (${c.model})</option>`;
+        });
+      } catch(e) {
+        document.getElementById("crane_no").innerHTML =
+          '<option value="">โหลดไม่สำเร็จ กรุณาลองใหม่</option>';
+      }
+    }
+
+    async function onCraneChange() {
+      const craneNo = document.getElementById("crane_no").value;
+      const groupSel = document.getElementById("group");
+
+      if (!craneNo) {
+        groupSel.innerHTML = '<option value="">-- เลือกรถก่อน --</option>';
+        groupSel.disabled = true;
+        checkReady();
+        return;
+      }
+
+      groupSel.innerHTML = '<option value="">-- กำลังโหลด --</option>';
+      groupSel.disabled = true;
+
+      try {
+        const res = await fetch(
+          `${BASE_URL}/crane-groups?crane_no=${encodeURIComponent(craneNo)}`
+        );
+        const data = await res.json();
+        groupSel.innerHTML = '<option value="">-- ทุกกล่อง --</option>';
+        data.groups.forEach(g => {
+          groupSel.innerHTML +=
+            `<option value="${g.sheet}">${g.label} (${g.sheet})</option>`;
+        });
+        groupSel.disabled = false;
+      } catch(e) {
+        groupSel.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
+      }
+      checkReady();
+    }
+
+    function checkReady() {
+      const craneNo = document.getElementById("crane_no").value;
+      document.getElementById("btn_view").disabled = !craneNo;
+    }
+
+    async function submit() {
+      const craneNo = document.getElementById("crane_no").value;
+      const group = document.getElementById("group").value;
+      const operationType = document.querySelector(
+        'input[name="operation_type"]:checked'
+      ).value;
+
+      if (!craneNo) return;
+
+      document.getElementById("btn_view").disabled = true;
+      document.getElementById("btn_view").textContent = "⏳ กำลังส่ง...";
+
+      // สร้าง LIFF message
+      let msg = `LIFF_OPERATION|crane_no=${craneNo}|operation_type=${operationType}`;
+      if (group) msg += `|group=${group}`;
+
+      try {
+        await liff.sendMessages([{ type: "text", text: msg }]);
+        liff.closeWindow();
+      } catch(e) {
+        document.getElementById("btn_view").disabled = false;
+        document.getElementById("btn_view").textContent = "📋 ดูวิธีการ";
+        alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

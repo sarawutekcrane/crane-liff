@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error Code Lookup</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 20px;
+      color: #1a3a6b;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+      color: #333;
+    }
+    select:disabled {
+      background: #f0f0f0;
+      color: #999;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #1a3a6b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #1a3a6b;
+      border: 2px solid #1a3a6b;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .error-msg {
+      color: #e74c3c;
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+    .hint {
+      color: #888;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔍 ค้นหา Error Code</h1>
+
+    <div class="form-group">
+      <label>เบอร์รถ</label>
+      <select id="crane_no" onchange="onCraneChange()">
+        <option value="">-- กำลังโหลด --</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>กล่องควบคุม</label>
+      <select id="group" disabled onchange="checkReady()">
+        <option value="">-- เลือกรถก่อน --</option>
+      </select>
+      <p class="hint">ถ้าไม่แน่ใจ เลือก "ทุกกล่อง" เพื่อค้นหาทั้งหมด</p>
+    </div>
+
+    <div class="form-group">
+      <label>รหัส Error</label>
+      <input type="text" id="error_code"
+        placeholder="เช่น E2010, W0024, 01"
+        oninput="checkReady()"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off">
+      <p class="hint">พิมรหัสที่แสดงบนกล่องควบคุม</p>
+    </div>
+
+    <p class="error-msg" id="error_msg">กรุณาเลือกรถและกรอกรหัส Error</p>
+
+    <button class="btn" id="btn_search" onclick="submit()" disabled>
+      🔍 ค้นหา
+    </button>
+
+    <hr class="divider">
+
+    <button class="btn-secondary" onclick="liff.closeWindow()">
+      ปิด
+    </button>
+  </div>
+
+  <script>
+    const BASE_URL = "https://crane-api-w9fj.onrender.com";
+    const LIFF_ID = "2010239215-NUKeSbNT"; // ← เปลี่ยนเป็น LIFF ID จริง
+
+    async function init() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        loadCranes();
+      } catch(e) {
+        console.error("LIFF init error:", e);
+      }
+    }
+
+    async function loadCranes() {
+      try {
+        const res = await fetch(`${BASE_URL}/crane-list`);
+        const data = await res.json();
+        const sel = document.getElementById("crane_no");
+        sel.innerHTML = '<option value="">-- เลือกรถ --</option>';
+        data.cranes.forEach(c => {
+          sel.innerHTML +=
+            `<option value="${c.crane_no}">${c.crane_no} (${c.model})</option>`;
+        });
+      } catch(e) {
+        document.getElementById("crane_no").innerHTML =
+          '<option value="">โหลดไม่สำเร็จ กรุณาลองใหม่</option>';
+      }
+    }
+
+    async function onCraneChange() {
+      const craneNo = document.getElementById("crane_no").value;
+      const groupSel = document.getElementById("group");
+
+      if (!craneNo) {
+        groupSel.innerHTML = '<option value="">-- เลือกรถก่อน --</option>';
+        groupSel.disabled = true;
+        checkReady();
+        return;
+      }
+
+      groupSel.innerHTML = '<option value="">-- กำลังโหลด --</option>';
+      groupSel.disabled = true;
+
+      try {
+        const res = await fetch(
+          `${BASE_URL}/crane-groups?crane_no=${encodeURIComponent(craneNo)}`
+        );
+        const data = await res.json();
+        groupSel.innerHTML = '<option value="">-- ทุกกล่อง --</option>';
+        data.groups.forEach(g => {
+          groupSel.innerHTML +=
+            `<option value="${g.sheet}">${g.label} (${g.sheet})</option>`;
+        });
+        groupSel.disabled = false;
+      } catch(e) {
+        groupSel.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
+      }
+      checkReady();
+    }
+
+    function checkReady() {
+      const craneNo = document.getElementById("crane_no").value;
+      const errorCode = document.getElementById("error_code").value.trim();
+      document.getElementById("btn_search").disabled = !(craneNo && errorCode);
+    }
+
+    async function submit() {
+      const craneNo = document.getElementById("crane_no").value;
+      const group = document.getElementById("group").value;
+      const errorCode = document.getElementById("error_code").value.trim();
+
+      if (!craneNo || !errorCode) {
+        document.getElementById("error_msg").style.display = "block";
+        return;
+      }
+
+      document.getElementById("error_msg").style.display = "none";
+      document.getElementById("btn_search").disabled = true;
+      document.getElementById("btn_search").textContent = "⏳ กำลังส่ง...";
+
+      // สร้าง LIFF message
+      let msg = `LIFF_ERROR|crane_no=${craneNo}|error_code=${errorCode}`;
+      if (group) msg += `|group=${group}`;
+
+      try {
+        await liff.sendMessages([{ type: "text", text: msg }]);
+        liff.closeWindow();
+      } catch(e) {
+        document.getElementById("btn_search").disabled = false;
+        document.getElementById("btn_search").textContent = "🔍 ค้นหา";
+        alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
