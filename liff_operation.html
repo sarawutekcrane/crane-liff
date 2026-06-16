@@ -26,6 +26,7 @@
     }
     .form-group {
       margin-bottom: 16px;
+      position: relative;
     }
     label {
       display: block;
@@ -34,7 +35,7 @@
       margin-bottom: 6px;
       font-weight: bold;
     }
-    select {
+    input[type="text"], select {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #ddd;
@@ -42,38 +43,63 @@
       font-size: 16px;
       background: white;
       color: #333;
+      outline: none;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: #8b1a1a;
     }
     select:disabled {
       background: #f0f0f0;
       color: #999;
     }
-    .operation-type {
-      display: flex;
-      gap: 10px;
-    }
-    .operation-type label {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
+
+    /* Searchable dropdown */
+    .search-dropdown { position: relative; }
+    .search-input-wrap { position: relative; }
+    .search-input-wrap input { padding-right: 36px; }
+    .search-input-wrap .clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #aaa;
       cursor: pointer;
-      font-weight: normal;
+      padding: 0;
+      line-height: 1;
+      display: none;
+    }
+    .dropdown-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .dropdown-list.show { display: block; }
+    .dropdown-item {
+      padding: 10px 14px;
       font-size: 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
     }
-    .operation-type input[type="radio"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #8b1a1a;
+    .dropdown-item:hover { background: #fff0f0; }
+    .dropdown-item.no-result {
+      color: #aaa;
+      cursor: default;
+      font-size: 14px;
     }
-    .operation-type label:has(input:checked) {
-      border-color: #8b1a1a;
-      background: #fff5f5;
-      color: #8b1a1a;
-      font-weight: bold;
-    }
+
     .btn {
       width: 100%;
       padding: 14px;
@@ -129,59 +155,55 @@
     <h1>📋 วิธีอ่าน Error Code</h1>
 
     <div class="info-box">
-      เลือกรถและกล่องควบคุมที่ต้องการดูวิธีการอ่านหรือ reset รหัส error
+      เลือกรถและกล่องควบคุม จะแสดงวิธีอ่านค่าและวิธี Reset error ให้ครบ
     </div>
 
+    <!-- Searchable crane dropdown -->
     <div class="form-group">
       <label>เบอร์รถ</label>
-      <select id="crane_no" onchange="onCraneChange()">
-        <option value="">-- กำลังโหลด --</option>
-      </select>
+      <div class="search-dropdown" id="crane_dropdown">
+        <div class="search-input-wrap">
+          <input type="text" id="crane_search"
+            placeholder="พิมหรือเลือกเบอร์รถ..."
+            autocomplete="off"
+            oninput="filterCranes()"
+            onfocus="showDropdown()"
+            onblur="hideDropdownDelay()">
+          <button class="clear-btn" id="crane_clear" onclick="clearCrane()">✕</button>
+        </div>
+        <div class="dropdown-list" id="crane_list"></div>
+      </div>
+      <input type="hidden" id="crane_no_val">
     </div>
 
+    <!-- กล่องควบคุม -->
     <div class="form-group">
       <label>กล่องควบคุม</label>
       <select id="group" disabled onchange="checkReady()">
         <option value="">-- เลือกรถก่อน --</option>
       </select>
-      <p class="hint">ถ้าไม่แน่ใจ เลือก "ทุกกล่อง" เพื่อดูทั้งหมด</p>
+      <p class="hint">เลือก "ทุกกล่อง" เพื่อดูวิธีทั้งหมดของรถคันนี้</p>
     </div>
 
-    <div class="form-group">
-      <label>ประเภท</label>
-      <div class="operation-type">
-        <label>
-          <input type="radio" name="operation_type" value="read" checked
-            onchange="checkReady()">
-          📖 วิธีอ่านค่า
-        </label>
-        <label>
-          <input type="radio" name="operation_type" value="reset"
-            onchange="checkReady()">
-          🔄 วิธี Reset
-        </label>
-      </div>
-    </div>
-
-    <button class="btn" id="btn_view" onclick="submit()" disabled>
+    <button class="btn" id="btn_view" onclick="submitForm()" disabled>
       📋 ดูวิธีการ
     </button>
 
     <hr class="divider">
-
-    <button class="btn-secondary" onclick="liff.closeWindow()">
-      ปิด
-    </button>
+    <button class="btn-secondary" onclick="liff.closeWindow()">ปิด</button>
   </div>
 
   <script>
     const BASE_URL = "https://crane-api-w9fj.onrender.com";
-    const LIFF_ID = "2010239215-2AdSJtwy"; // ← เปลี่ยนเป็น LIFF ID จริง
+    const LIFF_ID  = "2010239215-2AdSJtwy"; // ← ใส่ LIFF ID จริง
+
+    let allCranes = [];
+    let selectedCraneNo = "";
 
     async function init() {
       try {
         await liff.init({ liffId: LIFF_ID });
-        loadCranes();
+        await loadCranes();
       } catch(e) {
         console.error("LIFF init error:", e);
       }
@@ -191,68 +213,114 @@
       try {
         const res = await fetch(`${BASE_URL}/crane-list`);
         const data = await res.json();
-        const sel = document.getElementById("crane_no");
-        sel.innerHTML = '<option value="">-- เลือกรถ --</option>';
-        data.cranes.forEach(c => {
-          sel.innerHTML +=
-            `<option value="${c.crane_no}">${c.crane_no} (${c.model})</option>`;
-        });
+        allCranes = data.cranes || [];
+        renderDropdown(allCranes);
       } catch(e) {
-        document.getElementById("crane_no").innerHTML =
-          '<option value="">โหลดไม่สำเร็จ กรุณาลองใหม่</option>';
+        document.getElementById("crane_search").placeholder = "โหลดไม่สำเร็จ กรุณาลองใหม่";
       }
     }
 
-    async function onCraneChange() {
-      const craneNo = document.getElementById("crane_no").value;
-      const groupSel = document.getElementById("group");
-
-      if (!craneNo) {
-        groupSel.innerHTML = '<option value="">-- เลือกรถก่อน --</option>';
-        groupSel.disabled = true;
-        checkReady();
-        return;
+    function renderDropdown(cranes) {
+      const list = document.getElementById("crane_list");
+      if (cranes.length === 0) {
+        list.innerHTML = '<div class="dropdown-item no-result">ไม่พบรถที่ค้นหา</div>';
+      } else {
+        list.innerHTML = cranes.map(c =>
+          `<div class="dropdown-item"
+            data-value="${c.crane_no}"
+            onmousedown="selectCrane('${c.crane_no}', '${c.model}')">
+            ${c.crane_no} <span style="color:#888;font-size:13px">(${c.model})</span>
+          </div>`
+        ).join("");
       }
+    }
 
+    function filterCranes() {
+      const q = document.getElementById("crane_search").value.toLowerCase();
+      const filtered = allCranes.filter(c =>
+        c.crane_no.toLowerCase().includes(q) ||
+        c.model.toLowerCase().includes(q)
+      );
+      renderDropdown(filtered);
+      showDropdown();
+      if (!q) {
+        selectedCraneNo = "";
+        document.getElementById("crane_no_val").value = "";
+        document.getElementById("crane_clear").style.display = "none";
+        resetGroupDropdown();
+        checkReady();
+      }
+    }
+
+    function showDropdown() {
+      document.getElementById("crane_list").classList.add("show");
+    }
+
+    function hideDropdownDelay() {
+      setTimeout(() => {
+        document.getElementById("crane_list").classList.remove("show");
+      }, 200);
+    }
+
+    async function selectCrane(craneNo, model) {
+      selectedCraneNo = craneNo;
+      document.getElementById("crane_search").value = `${craneNo} (${model})`;
+      document.getElementById("crane_no_val").value = craneNo;
+      document.getElementById("crane_clear").style.display = "block";
+      document.getElementById("crane_list").classList.remove("show");
+      await loadGroups(craneNo);
+      checkReady();
+    }
+
+    function clearCrane() {
+      selectedCraneNo = "";
+      document.getElementById("crane_search").value = "";
+      document.getElementById("crane_no_val").value = "";
+      document.getElementById("crane_clear").style.display = "none";
+      renderDropdown(allCranes);
+      resetGroupDropdown();
+      checkReady();
+    }
+
+    function resetGroupDropdown() {
+      const groupSel = document.getElementById("group");
+      groupSel.innerHTML = '<option value="">-- เลือกรถก่อน --</option>';
+      groupSel.disabled = true;
+    }
+
+    async function loadGroups(craneNo) {
+      const groupSel = document.getElementById("group");
       groupSel.innerHTML = '<option value="">-- กำลังโหลด --</option>';
       groupSel.disabled = true;
-
       try {
-        const res = await fetch(
-          `${BASE_URL}/crane-groups?crane_no=${encodeURIComponent(craneNo)}`
-        );
+        const res = await fetch(`${BASE_URL}/crane-groups?crane_no=${encodeURIComponent(craneNo)}`);
         const data = await res.json();
         groupSel.innerHTML = '<option value="">-- ทุกกล่อง --</option>';
         data.groups.forEach(g => {
-          groupSel.innerHTML +=
-            `<option value="${g.sheet}">${g.label} (${g.sheet})</option>`;
+          groupSel.innerHTML += `<option value="${g.sheet}">${g.label} (${g.sheet})</option>`;
         });
         groupSel.disabled = false;
       } catch(e) {
         groupSel.innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
       }
-      checkReady();
     }
 
     function checkReady() {
-      const craneNo = document.getElementById("crane_no").value;
+      const craneNo = document.getElementById("crane_no_val").value;
       document.getElementById("btn_view").disabled = !craneNo;
     }
 
-    async function submit() {
-      const craneNo = document.getElementById("crane_no").value;
+    async function submitForm() {
+      const craneNo = document.getElementById("crane_no_val").value;
       const group = document.getElementById("group").value;
-      const operationType = document.querySelector(
-        'input[name="operation_type"]:checked'
-      ).value;
 
       if (!craneNo) return;
 
       document.getElementById("btn_view").disabled = true;
       document.getElementById("btn_view").textContent = "⏳ กำลังส่ง...";
 
-      // สร้าง LIFF message
-      let msg = `LIFF_OPERATION|crane_no=${craneNo}|operation_type=${operationType}`;
+      // ส่ง operation_type=all เพื่อให้แสดงทั้ง read และ reset
+      let msg = `LIFF_OPERATION|crane_no=${craneNo}|operation_type=all`;
       if (group) msg += `|group=${group}`;
 
       try {
