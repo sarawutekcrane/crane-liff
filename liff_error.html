@@ -7,167 +7,74 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Sarabun', sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    h1 {
-      font-size: 20px;
-      color: #1a3a6b;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .form-group {
-      margin-bottom: 16px;
-      position: relative;
-    }
-    label {
-      display: block;
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
+    body { font-family: 'Sarabun', sans-serif; background: #f5f5f5; padding: 20px; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { font-size: 20px; color: #1a3a6b; margin-bottom: 20px; text-align: center; }
+    .form-group { margin-bottom: 16px; position: relative; }
+    label { display: block; font-size: 14px; color: #555; margin-bottom: 6px; font-weight: bold; }
     input[type="text"], select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 16px;
-      background: white;
-      color: #333;
-      outline: none;
+      width: 100%; padding: 10px 12px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 16px; background: white; color: #333; outline: none;
     }
-    input[type="text"]:focus, select:focus {
-      border-color: #1a3a6b;
-    }
-    select:disabled {
-      background: #f0f0f0;
-      color: #999;
-    }
+    input[type="text"]:focus, select:focus { border-color: #1a3a6b; }
+    select:disabled { background: #f0f0f0; color: #999; }
 
-    /* Searchable dropdown */
-    .search-dropdown {
-      position: relative;
-    }
-    .search-input-wrap {
-      position: relative;
-    }
-    .search-input-wrap input {
-      padding-right: 36px;
-    }
+    /* Searchable dropdown shared style */
+    .search-dropdown { position: relative; }
+    .search-input-wrap { position: relative; }
+    .search-input-wrap input { padding-right: 36px; }
     .search-input-wrap .clear-btn {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      font-size: 18px;
-      color: #aaa;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      display: none;
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; font-size: 18px; color: #aaa;
+      cursor: pointer; padding: 0; line-height: 1; display: none;
     }
     .dropdown-list {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: white;
-      border: 1px solid #ddd;
-      border-top: none;
-      border-radius: 0 0 8px 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 100;
-      display: none;
+      position: absolute; top: 100%; left: 0; right: 0; background: white;
+      border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;
+      max-height: 220px; overflow-y: auto; z-index: 100; display: none;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     .dropdown-list.show { display: block; }
     .dropdown-item {
-      padding: 10px 14px;
-      font-size: 15px;
-      cursor: pointer;
+      padding: 10px 14px; font-size: 15px; cursor: pointer;
       border-bottom: 1px solid #f0f0f0;
     }
     .dropdown-item:hover { background: #f0f4ff; }
-    .dropdown-item.selected { background: #e8eeff; font-weight: bold; }
-    .dropdown-item.no-result {
-      color: #aaa;
-      cursor: default;
-      font-size: 14px;
-    }
+    .dropdown-item .item-code { font-weight: bold; color: #1a3a6b; }
+    .dropdown-item .item-detail { font-size: 12px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dropdown-item.no-result { color: #aaa; cursor: default; font-size: 14px; }
 
     .btn {
-      width: 100%;
-      padding: 14px;
-      background: #1a3a6b;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 8px;
+      width: 100%; padding: 14px; background: #1a3a6b; color: white;
+      border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
+      cursor: pointer; margin-top: 8px;
     }
-    .btn:disabled {
-      background: #aaa;
-      cursor: not-allowed;
-    }
+    .btn:disabled { background: #aaa; cursor: not-allowed; }
     .btn-secondary {
-      width: 100%;
-      padding: 12px;
-      background: white;
-      color: #1a3a6b;
-      border: 2px solid #1a3a6b;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 8px;
+      width: 100%; padding: 12px; background: white; color: #1a3a6b;
+      border: 2px solid #1a3a6b; border-radius: 8px; font-size: 15px;
+      font-weight: bold; cursor: pointer; margin-top: 8px;
     }
-    .error-msg {
-      color: #e74c3c;
-      font-size: 13px;
-      margin-top: 8px;
-      display: none;
-    }
-    .hint {
-      color: #888;
-      font-size: 12px;
-      margin-top: 4px;
-    }
-    .divider {
-      border: none;
-      border-top: 1px solid #eee;
-      margin: 20px 0;
-    }
+    .error-msg { color: #e74c3c; font-size: 13px; margin-top: 8px; display: none; }
+    .hint { color: #888; font-size: 12px; margin-top: 4px; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 20px 0; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>🔍 ค้นหา Error Code</h1>
 
-    <!-- Searchable crane dropdown -->
+    <!-- Crane searchable dropdown -->
     <div class="form-group">
       <label>เบอร์รถ</label>
-      <div class="search-dropdown" id="crane_dropdown">
+      <div class="search-dropdown">
         <div class="search-input-wrap">
           <input type="text" id="crane_search"
             placeholder="พิมหรือเลือกเบอร์รถ..."
             autocomplete="off"
             oninput="filterCranes()"
-            onfocus="showDropdown()"
-            onblur="hideDropdownDelay()">
+            onfocus="showDropdown('crane_list')"
+            onblur="hideDropdownDelay('crane_list')">
           <button class="clear-btn" id="crane_clear" onclick="clearCrane()">✕</button>
         </div>
         <div class="dropdown-list" id="crane_list"></div>
@@ -178,30 +85,35 @@
     <!-- กล่องควบคุม -->
     <div class="form-group">
       <label>กล่องควบคุม</label>
-      <select id="group" disabled onchange="checkReady()">
+      <select id="group" disabled onchange="onGroupChange()">
         <option value="">-- เลือกรถก่อน --</option>
       </select>
       <p class="hint">เลือก "ทุกกล่อง" เพื่อค้นหาทั้งหมด</p>
     </div>
 
-    <!-- Error Code -->
+    <!-- Error Code searchable dropdown -->
     <div class="form-group">
       <label>รหัส Error</label>
-      <input type="text" id="error_code"
-        placeholder="เช่น E2010, W0024, 01"
-        oninput="checkReady()"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off">
-      <p class="hint">พิมรหัสที่แสดงบนกล่องควบคุม</p>
+      <div class="search-dropdown">
+        <div class="search-input-wrap">
+          <input type="text" id="error_search"
+            placeholder="พิมรหัสหรือข้อความ error..."
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            oninput="onErrorInput()"
+            onfocus="showDropdown('error_list')"
+            onblur="hideDropdownDelay('error_list')">
+          <button class="clear-btn" id="error_clear" onclick="clearError()">✕</button>
+        </div>
+        <div class="dropdown-list" id="error_list"></div>
+      </div>
+      <input type="hidden" id="error_code_val">
+      <p class="hint" id="error_hint">เลือกกล่องควบคุมก่อนเพื่อโหลด error list</p>
     </div>
 
     <p class="error-msg" id="error_msg">กรุณาเลือกรถและกรอกรหัส Error</p>
-
-    <button class="btn" id="btn_search" onclick="submitForm()" disabled>
-      🔍 ค้นหา
-    </button>
-
+    <button class="btn" id="btn_search" onclick="submitForm()" disabled>🔍 ค้นหา</button>
     <hr class="divider">
     <button class="btn-secondary" onclick="liff.closeWindow()">ปิด</button>
   </div>
@@ -212,37 +124,57 @@
 
     let allCranes = [];
     let selectedCraneNo = "";
+    let selectedModel = "";
+    let allErrorCodes = [];
+    let errorSearchTimer = null;
 
+    // ============================================================
+    // INIT
+    // ============================================================
     async function init() {
       try {
         await liff.init({ liffId: LIFF_ID });
         await loadCranes();
-      } catch(e) {
-        console.error("LIFF init error:", e);
-      }
+      } catch(e) { console.error("LIFF init error:", e); }
     }
 
+    // ============================================================
+    // SHARED DROPDOWN HELPERS
+    // ============================================================
+    function showDropdown(id) {
+      document.getElementById(id).classList.add("show");
+    }
+
+    function hideDropdownDelay(id) {
+      setTimeout(() => {
+        document.getElementById(id).classList.remove("show");
+      }, 200);
+    }
+
+    // ============================================================
+    // CRANE DROPDOWN
+    // ============================================================
     async function loadCranes() {
       try {
         const res = await fetch(`${BASE_URL}/crane-list`);
         const data = await res.json();
         allCranes = data.cranes || [];
-        renderDropdown(allCranes);
+        renderCraneList(allCranes);
       } catch(e) {
-        document.getElementById("crane_search").placeholder = "โหลดไม่สำเร็จ กรุณาลองใหม่";
+        document.getElementById("crane_search").placeholder = "โหลดไม่สำเร็จ";
       }
     }
 
-    function renderDropdown(cranes) {
+    function renderCraneList(cranes) {
       const list = document.getElementById("crane_list");
-      if (cranes.length === 0) {
+      if (!cranes.length) {
         list.innerHTML = '<div class="dropdown-item no-result">ไม่พบรถที่ค้นหา</div>';
       } else {
         list.innerHTML = cranes.map(c =>
-          `<div class="dropdown-item" 
-            data-value="${c.crane_no}"
-            onmousedown="selectCrane('${c.crane_no}', '${c.model}')">
-            ${c.crane_no} <span style="color:#888;font-size:13px">(${c.model})</span>
+          `<div class="dropdown-item"
+            onmousedown="selectCrane('${c.crane_no}','${c.model}')">
+            <div class="item-code">${c.crane_no}</div>
+            <div class="item-detail">${c.model}</div>
           </div>`
         ).join("");
       }
@@ -251,33 +183,16 @@
     function filterCranes() {
       const q = document.getElementById("crane_search").value.toLowerCase();
       const filtered = allCranes.filter(c =>
-        c.crane_no.toLowerCase().includes(q) ||
-        c.model.toLowerCase().includes(q)
+        c.crane_no.toLowerCase().includes(q) || c.model.toLowerCase().includes(q)
       );
-      renderDropdown(filtered);
-      showDropdown();
-      // ถ้าล้างข้อความ ล้างค่าที่เลือกด้วย
-      if (!q) {
-        selectedCraneNo = "";
-        document.getElementById("crane_no_val").value = "";
-        document.getElementById("crane_clear").style.display = "none";
-        resetGroupDropdown();
-        checkReady();
-      }
-    }
-
-    function showDropdown() {
-      document.getElementById("crane_list").classList.add("show");
-    }
-
-    function hideDropdownDelay() {
-      setTimeout(() => {
-        document.getElementById("crane_list").classList.remove("show");
-      }, 200);
+      renderCraneList(filtered);
+      showDropdown("crane_list");
+      if (!q) clearCrane();
     }
 
     async function selectCrane(craneNo, model) {
       selectedCraneNo = craneNo;
+      selectedModel = model;
       document.getElementById("crane_search").value = `${craneNo} (${model})`;
       document.getElementById("crane_no_val").value = craneNo;
       document.getElementById("crane_clear").style.display = "block";
@@ -288,20 +203,19 @@
 
     function clearCrane() {
       selectedCraneNo = "";
+      selectedModel = "";
       document.getElementById("crane_search").value = "";
       document.getElementById("crane_no_val").value = "";
       document.getElementById("crane_clear").style.display = "none";
-      renderDropdown(allCranes);
+      renderCraneList(allCranes);
       resetGroupDropdown();
+      clearError();
       checkReady();
     }
 
-    function resetGroupDropdown() {
-      const groupSel = document.getElementById("group");
-      groupSel.innerHTML = '<option value="">-- เลือกรถก่อน --</option>';
-      groupSel.disabled = true;
-    }
-
+    // ============================================================
+    // GROUP DROPDOWN
+    // ============================================================
     async function loadGroups(craneNo) {
       const groupSel = document.getElementById("group");
       groupSel.innerHTML = '<option value="">-- กำลังโหลด --</option>';
@@ -319,16 +233,123 @@
       }
     }
 
+    function resetGroupDropdown() {
+      const groupSel = document.getElementById("group");
+      groupSel.innerHTML = '<option value="">-- เลือกรถก่อน --</option>';
+      groupSel.disabled = true;
+      allErrorCodes = [];
+      document.getElementById("error_hint").textContent = "เลือกกล่องควบคุมก่อนเพื่อโหลด error list";
+    }
+
+    async function onGroupChange() {
+      clearError();
+      const sheet = document.getElementById("group").value;
+      if (sheet) {
+        await loadErrorCodes(sheet);
+      } else {
+        allErrorCodes = [];
+        document.getElementById("error_hint").textContent = "เลือกกล่องควบคุมก่อนเพื่อโหลด error list";
+      }
+      checkReady();
+    }
+
+    // ============================================================
+    // ERROR CODE SEARCHABLE DROPDOWN
+    // ============================================================
+    async function loadErrorCodes(sheet, keyword = "") {
+      try {
+        document.getElementById("error_hint").textContent = "กำลังโหลด...";
+        let url = `${BASE_URL}/error-codes?sheet=${encodeURIComponent(sheet)}`;
+        if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+        if (selectedModel) url += `&model=${encodeURIComponent(selectedModel)}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        allErrorCodes = data.codes || [];
+
+        document.getElementById("error_hint").textContent =
+          allErrorCodes.length > 0
+            ? `พบ ${allErrorCodes.length} รายการ — พิมเพื่อกรอง`
+            : "ไม่พบข้อมูล error code";
+
+        renderErrorList(allErrorCodes);
+        if (allErrorCodes.length > 0) showDropdown("error_list");
+      } catch(e) {
+        document.getElementById("error_hint").textContent = "โหลดไม่สำเร็จ";
+      }
+    }
+
+    function renderErrorList(codes) {
+      const list = document.getElementById("error_list");
+      if (!codes.length) {
+        list.innerHTML = '<div class="dropdown-item no-result">ไม่พบ error code ที่ค้นหา</div>';
+      } else {
+        list.innerHTML = codes.map(c =>
+          `<div class="dropdown-item"
+            onmousedown="selectError('${c.code.replace(/'/g,"\\'")}')">
+            <div class="item-code">${c.code}</div>
+            ${c.detail ? `<div class="item-detail">${c.detail}</div>` : ""}
+          </div>`
+        ).join("");
+      }
+    }
+
+    function onErrorInput() {
+      const val = document.getElementById("error_search").value;
+      document.getElementById("error_code_val").value = val; // ใช้ค่าที่พิมตรงๆ
+      document.getElementById("error_clear").style.display = val ? "block" : "none";
+
+      const sheet = document.getElementById("group").value;
+      if (!sheet) {
+        // ถ้าไม่ได้เลือกกล่อง ให้พิมตรงๆ ได้เลย
+        checkReady();
+        return;
+      }
+
+      // debounce 300ms ก่อน search
+      clearTimeout(errorSearchTimer);
+      errorSearchTimer = setTimeout(async () => {
+        if (val.length >= 1) {
+          await loadErrorCodes(sheet, val);
+          showDropdown("error_list");
+        } else {
+          await loadErrorCodes(sheet);
+        }
+      }, 300);
+
+      checkReady();
+    }
+
+    function selectError(code) {
+      document.getElementById("error_search").value = code;
+      document.getElementById("error_code_val").value = code;
+      document.getElementById("error_clear").style.display = "block";
+      document.getElementById("error_list").classList.remove("show");
+      checkReady();
+    }
+
+    function clearError() {
+      document.getElementById("error_search").value = "";
+      document.getElementById("error_code_val").value = "";
+      document.getElementById("error_clear").style.display = "none";
+      document.getElementById("error_list").innerHTML = "";
+      document.getElementById("error_list").classList.remove("show");
+      checkReady();
+    }
+
+    // ============================================================
+    // READY CHECK & SUBMIT
+    // ============================================================
     function checkReady() {
       const craneNo = document.getElementById("crane_no_val").value;
-      const errorCode = document.getElementById("error_code").value.trim();
+      const errorCode = document.getElementById("error_code_val").value.trim();
       document.getElementById("btn_search").disabled = !(craneNo && errorCode);
     }
 
     async function submitForm() {
       const craneNo = document.getElementById("crane_no_val").value;
       const group = document.getElementById("group").value;
-      const errorCode = document.getElementById("error_code").value.trim();
+      const errorCode = document.getElementById("error_code_val").value.trim();
 
       if (!craneNo || !errorCode) {
         document.getElementById("error_msg").style.display = "block";
@@ -339,7 +360,6 @@
       document.getElementById("btn_search").disabled = true;
       document.getElementById("btn_search").textContent = "⏳ กำลังส่ง...";
 
-      // สร้าง LIFF message — error_code เป็น string เสมอ
       let msg = `LIFF_ERROR|crane_no=${craneNo}|error_code=${errorCode}`;
       if (group) msg += `|group=${group}`;
 
