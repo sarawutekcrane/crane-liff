@@ -245,7 +245,11 @@
       clearError();
       const sheet = document.getElementById("group").value;
       if (sheet) {
+        // เลือกกล่องเฉพาะ
         await loadErrorCodes(sheet);
+      } else if (selectedCraneNo) {
+        // เลือกทุกกล่อง → โหลดจากทุกกล่องของรถคันนี้
+        await loadErrorCodes("", "");
       } else {
         allErrorCodes = [];
         document.getElementById("error_hint").textContent = "เลือกกล่องควบคุมก่อนเพื่อโหลด error list";
@@ -259,9 +263,23 @@
     async function loadErrorCodes(sheet, keyword = "") {
       try {
         document.getElementById("error_hint").textContent = "กำลังโหลด...";
-        let url = `${BASE_URL}/error-codes?sheet=${encodeURIComponent(sheet)}`;
+
+        let url = `${BASE_URL}/error-codes`;
+
+        // กรณีเลือกทุกกล่อง — ส่ง crane_no ไปด้วย
+        if (!sheet && selectedCraneNo) {
+          url += `?sheet=all&crane_no=${encodeURIComponent(selectedCraneNo)}`;
+        } else {
+          url += `?sheet=${encodeURIComponent(sheet)}`;
+        }
+
         if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
         if (selectedModel) url += `&model=${encodeURIComponent(selectedModel)}`;
+        if (!sheet && selectedCraneNo) {
+          // crane_no ส่งไปแล้ว
+        } else if (selectedCraneNo) {
+          url += `&crane_no=${encodeURIComponent(selectedCraneNo)}`;
+        }
 
         const res = await fetch(url);
         const data = await res.json();
@@ -287,7 +305,7 @@
         list.innerHTML = codes.map(c =>
           `<div class="dropdown-item"
             onmousedown="selectError('${c.code.replace(/'/g,"\\'")}')">
-            <div class="item-code">${c.code}</div>
+            <div class="item-code">${c.code}${c.group ? ` <span style="color:#aaa;font-size:11px">[${c.group}]</span>` : ""}</div>
             ${c.detail ? `<div class="item-detail">${c.detail}</div>` : ""}
           </div>`
         ).join("");
@@ -296,12 +314,13 @@
 
     function onErrorInput() {
       const val = document.getElementById("error_search").value;
-      document.getElementById("error_code_val").value = val; // ใช้ค่าที่พิมตรงๆ
+      document.getElementById("error_code_val").value = val;
       document.getElementById("error_clear").style.display = val ? "block" : "none";
 
       const sheet = document.getElementById("group").value;
-      if (!sheet) {
-        // ถ้าไม่ได้เลือกกล่อง ให้พิมตรงๆ ได้เลย
+      const hasGroup = sheet || selectedCraneNo;
+
+      if (!hasGroup) {
         checkReady();
         return;
       }
